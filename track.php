@@ -102,7 +102,7 @@ if (isset($_GET['objeto'])) {
                 </tr>
             </tbody>
             <tfoot>
-                <?php if ($status != "Entdfregue") {
+                <?php if ($status != "Entregue") {
                 ?>
                     <tr>
                         <td colspan="2" style="padding: 20px 0 12px 0;color: gray ; font-family: Arial, sans-serif;border:none; font-size: 12px;">
