@@ -15,7 +15,7 @@ require 'vendor/autoload.php';
 $mail = new PHPMailer(true);
 
 require_once "config.php";
-include_once "geraPdf.php";
+include_once "generatePdf.php";
 
 if (isset($_POST['objeto'])) {
     $objeto = $_POST['objeto'];
