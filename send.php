@@ -11,96 +11,122 @@ use PHPMailer\PHPMailer\Exception;
 // Load Composer's autoloader
 require 'vendor/autoload.php';
 
+require_once "config.php";
+include_once "generatePdf.php";
 // Instantiation and passing `true` enables exceptions
 $mail = new PHPMailer(true);
 
-require_once "config.php";
-include_once "generatePdf.php";
+
 
 if (isset($_POST['objeto'])) {
     $objeto = $_POST['objeto'];
+    //cria array com cada objeto separado por ";"
     $objeto = explode(";", $objeto);
 
+    //executa rotina para cada objeto enviado
     foreach ($objeto as $obj) {
+
+        //traz os dados JSON retornados pela API
         $res = file_get_contents(APISERVICE . $obj);
+        //decodifica o JSON retornado
         $decode = json_decode($res, true);
 
-        $corpoDoEmail = file_get_contents(RAIZ . 'track.php?objeto=' . $obj);
+        //cria ,através do order.php, o html que gera a estrutura da encomenda que é enviada no corpo 
+        //do email e no pdf. 
+        $corpoDoEmail = file_get_contents(RAIZ . 'order.php?objeto=' . $obj);
 
+        //extrai as informações retornadas pela API para a encomenda.
         foreach ($decode as $key => $value) {
+
+            //define o status da entrega
             switch ($value[0]['action']) {
                 case "Objeto entregue ao destinatário":
                     $status = "Entregue";
-                    $statusBar = 'entregue';
                     break;
                 case "Objeto aguardando retirada no endereço indicado":
                     $status =  "Erro";
-                    $statusBar = 'erro';
                     break;
                 case "Carteiro não atendido - Entrega não realizada":
                     $status =  "Erro";
-                    $statusBar = 'erro';
                     break;
                 case "Objeto saiu para entrega ao destinatário":
                     $status =  "Encaminhado";
-                    $statusBar = 'encaminhado';
                     break;
                 case "Objeto em trânsito - por favor aguarde":
                     $status =  "Encaminhado";
-                    $statusBar = 'transito';
                     break;
                 case "Objeto postado após o horário limite da unidade":
                     $status =  "Postado";
-                    $statusBar = 'postado';
                     break;
             }
-            // Instantiation and passing `true` enables exceptions
 
 
+            //envio do email
             try {
+
                 $mail = new PHPMailer();
+
                 // Método de envio
                 $mail->IsSMTP();
+                $mail->CharSet = 'UTF-8';
+                $mail->IsHTML(true);
+
                 // Enviar por SMTP
                 $mail->Host = "smtp.gmail.com";
+
                 // Você pode alterar este parametro para o endereço de SMTP do seu provedor
                 $mail->Port = 587;
+
                 // Usar autenticação SMTP (obrigatório)
                 $mail->SMTPAuth = true;
+
                 // Usuário do servidor SMTP (endereço de email)
                 // obs: Use a mesma senha da sua conta de email
                 $mail->Username = EMAIL;
                 $mail->Password = SENHA;
-                // Configurações de compatibilidade para autenticação em TLS
+                //configurações de compatibilidade para autenticação em TLS
                 $mail->SMTPOptions = array('ssl' => array('verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true));
-                // Você pode habilitar esta opção caso tenha problemas. Assim pode identificar mensagens de erro.
-                // $mail->SMTPDebug = 2;
-                // Define o remetente
-                // Seu e-mail
-                $mail->CharSet = 'UTF-8';
-                $mail->IsHTML(true);
+
                 $mail->From = EMAIL;
-                // Seu nome
+
+                //seu nome
                 $mail->FromName = "";
 
-                $mail->addAddress(DESTINATARIO); // Add a recipient
+                //destinatário
+                $mail->addAddress(DESTINATARIO);
 
-                $trackDir = geraPDF($key);
-                // Content
-                $mail->isHTML(true); // Set email format to HTML
-                $mail->Subject = 'Encomenda: ' . $key . ' - Status: ' . $status;
+                //em cópia
+                $mail->AddCC(COPIAEMAIL);
+
+
+                //conteúdo
+                //assunto
+                $mail->Subject = 'Encomenda: ' . $generatePdf . ' - Status: ' . $status;
+
+                //corpo do email
                 $mail->Body = $corpoDoEmail;
-                $mail->AddAttachment($trackDir);
-                //$mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
 
+                //gera o pdf através do arquivo generatePdf.php e retorna com o caminho do arquivo
+                $orderDir = geraPDF($key);
+
+                //anexa o pdf gerado
+                $mail->AddAttachment($orderDir);
+
+                //envia o email
                 $mail->send();
+
+                //concatena o result para que apareça mensagem informando todas as encomendas com status enviado
                 $result .= "E-mail da entrega $key foi enviado com sucesso! <br>";
             } catch (Exception $e) {
-                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                //em caso de erro
+                echo "A mensagem não foi enviada. O erro do e-mail foi: {$mail->ErrorInfo}";
             }
-            unlink($trackDir);
+            //unlink($generatePdf);
         }
     }
     $_SESSION['emailStatus'] =  $result;
     header('Location: ' . RAIZ . 'index.php');
+} else {
+    $jsonObcject = new stdClass();
+    $jsonObcject->msg = "Objeto não encontrado";
 }

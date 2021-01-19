@@ -16,13 +16,17 @@ require_once "config.php";
 
 if (isset($_GET['objeto'])) {
     $obj = $_GET["objeto"];
+    //retorna o que foi enviado pela API (JSON)
     $res = file_get_contents(APISERVICE . $obj);
+    //decodifica o JSON retornado pela API
     $decode = json_decode($res, TRUE);
+
 
 ?>
     <table cellpadding="0" cellspacing="0" width="500">
         <?php
         foreach ($decode as $key => $value) {
+            //define status e qual a barra de status a ser exibida para a encomenda
             switch ($value[0]['action']) {
                 case "Objeto entregue ao destinatário":
                     $status = "Entregue";
@@ -97,12 +101,15 @@ if (isset($_GET['objeto'])) {
                 ?>
                 <tr>
                     <td><strong><?php echo $status; ?></strong> </td>
+                    <!-- cria a barra de status -->
                     <?php echo $statusBar; ?>
 
                 </tr>
             </tbody>
             <tfoot>
-                <?php if ($status != "Entregue") {
+                <?php
+                //se o status não for igual a Entregue exibe a msg "falta pouco"
+                if ($status != "Entregue") {
                 ?>
                     <tr>
                         <td colspan="2" style="padding: 20px 0 12px 0;color: gray ; font-family: Arial, sans-serif;border:none; font-size: 12px;">
@@ -121,6 +128,9 @@ if (isset($_GET['objeto'])) {
                         Telefone: (38) 99918-8899 <br>
                         Rua Uruguaiana, 78, Centro - Curvelo/MG <br>
                         Email: german.o@outlook.com.br / comitereg2@gmail.com <br>
+                        <p>Esse projeto (api e o sistema de consultas) estão no meu GITHUB <br>
+                            <a href="https://github.com/germano-rs">https://github.com/germano-rs</a>
+                        </p>
                     </td>
                 </tr>
 

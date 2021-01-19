@@ -1,4 +1,6 @@
 <?php
+require_once "config.php";
+
 //Iniciando a sessão:
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -26,10 +28,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     </style>
 </head>
 <?php
-require_once "config.php";
 
 function status($msg)
 {
+    //retorna um status para a encomenda
     switch ($msg) {
         case "Objeto entregue ao destinatário":
             return "Entregue";
@@ -70,21 +72,27 @@ function status($msg)
         </form>
         <div id="trackingForm">
             <?php
+            //verifica se há sessão com status de envio de email
             if (isset($_SESSION['emailStatus'])) {
                 echo '<div class="alert alert-info" role="alert">' . $_SESSION['emailStatus'] . '</b></div>';
+                //apaga a sessão após exibir alerta com o status de envio
                 unset($_SESSION['emailStatus']);
             }
+            //se foi passado algum objeto na URL...
             if (isset($_GET['objeto'])) {
                 $obj = $_GET["objeto"];
 
+                //retorna o que foi enviado pela API (JSON)
                 $res = file_get_contents(APISERVICE . $obj);
+                //decodifica o JSON retornado pela API
                 $decode = json_decode($res, TRUE);
 
+                // se  "erro" = TRUE no JSON retornado pela API...
                 if (isset($decode['erro'])) {
                     echo '<div class="alert alert-danger" role="alert">Não encontramos o código <b>' . $decode['obj'] . '</b> buscado</div>';
                     exit;
                 }
-
+                //se há "msg" no JSON retornado pela API...
                 if (isset($decode['msg'])) {
                     echo '<div class="alert alert-info" role="alert">' . $decode['msg'] . '</b></div>';
                     exit;
@@ -146,9 +154,11 @@ function status($msg)
 </body>
 
 <script>
-    function trimString() {
-        var x = document.getElementById("trackingCode");
-        x.value = x.value.trim()
+    //limpa espaços em branco que possa ficar nos códigos de rastreios das encomendas
+
+    var tC = document.getElementById('trackingCode')
+    tC.onkeyup = function() {
+        tC.value = tC.value.replace(' ', '')
     }
 </script>
 
