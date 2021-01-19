@@ -121,7 +121,7 @@ if (isset($_POST['objeto'])) {
                 //em caso de erro
                 echo "A mensagem não foi enviada. O erro do e-mail foi: {$mail->ErrorInfo}";
             }
-            //unlink($generatePdf);
+            unlink($generatePdf);
         }
     }
     $_SESSION['emailStatus'] =  $result;
